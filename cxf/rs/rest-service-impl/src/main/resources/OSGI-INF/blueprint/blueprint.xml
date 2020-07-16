@@ -1,0 +1,43 @@
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:ext="http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.6.0"
+           xmlns:jaxrs="http://cxf.apache.org/blueprint/jaxrs"
+           xmlns:cxf="http://cxf.apache.org/blueprint/core"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.3.0"
+           xsi:schemaLocation="http://www.osgi.org/xmlns/blueprint/v1.0.0 http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+
+  http://cxf.apache.org/blueprint/jaxrs http://cxf.apache.org/schemas/blueprint/jaxrs.xsd
+  http://cxf.apache.org/blueprint/core http://cxf.apache.org/schemas/blueprint/core.xsd">
+
+    <ext:property-placeholder placeholder-prefix="$[" placeholder-suffix="]"/>
+    <cm:property-placeholder persistent-id="org.example.cxf.rest" update-strategy="reload">
+        <cm:default-properties>
+            <cm:property name="repository" value="example/repository"/>
+            <cm:property name="service.rest.address" value="/rest"/>
+        </cm:default-properties>
+    </cm:property-placeholder>
+
+    <cxf:bus id="cxfRestBus">
+        <cxf:features>
+            <cxf:logging/>
+        </cxf:features>
+    </cxf:bus>
+
+    <jaxrs:server address="${service.rest.address}" id="itemsRestService">
+        <jaxrs:serviceBeans>
+            <ref component-id="restServiceImpl"/>
+        </jaxrs:serviceBeans>
+        <jaxrs:providers>
+            <bean class="com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider"/>
+        </jaxrs:providers>
+    </jaxrs:server>
+
+    <reference id="repository" interface="org.example.service.database.api.ItemRepository"
+               ext:filter="(osgi.jndi.service.name=${repository})"/>
+
+    <bean id="restServiceImpl" class="org.example.cxf.rest.impl.ItemServiceImpl">
+        <property name="repository" ref="repository"/>
+    </bean>
+
+
+</blueprint>

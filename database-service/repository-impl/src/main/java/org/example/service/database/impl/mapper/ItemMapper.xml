@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.service.database.impl.mapper.ItemMapper">
+    <select id="getItem" resultType="org.example.service.database.dto.Item">
+        select * from items where id = #{id}
+    </select>
+    <select id="getItems" resultType="org.example.service.database.dto.Item">
+        select * from items
+    </select>
+    <insert id="addItem" parameterType="org.example.service.database.dto.Item" useGeneratedKeys="true" keyProperty="id">
+        insert into items (name, description) values (#{name}, #{description})
+    </insert>
+    <update id="updateItem" parameterType="org.example.service.database.dto.Item">
+        update items set
+        name = #{name},
+        description = #{description}
+        where id = #{id}
+    </update>
+    <delete id="deleteItem">
+        delete from items where id = #{id}
+    </delete>
+</mapper>

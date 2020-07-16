@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:ext="http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.6.0"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.3.0"
+>
+    <ext:property-placeholder placeholder-prefix="$[" placeholder-suffix="]"/>
+    <cm:property-placeholder persistent-id="example.repository.mybatis" update-strategy="reload">
+        <cm:default-properties>
+            <cm:property name="osgi.jndi.service.name" value="example/repository"/>
+            <cm:property name="dataSource" value="jdbc/state/local"/>
+        </cm:default-properties>
+    </cm:property-placeholder>
+
+    <reference id="dataSource" interface="javax.sql.DataSource" ext:filter="(osgi.jndi.service.name=${dataSource})"/>
+
+    <bean id="repositoryService" class="org.example.service.database.impl.ItemRepositoryImpl">
+        <argument ref="dataSource"/>
+    </bean>
+
+    <service ref="repositoryService" interface="org.example.service.database.api.ItemRepository">
+        <service-properties>
+            <entry key="osgi.jndi.service.name" value="${osgi.jndi.service.name}"/>
+        </service-properties>
+    </service>
+</blueprint>

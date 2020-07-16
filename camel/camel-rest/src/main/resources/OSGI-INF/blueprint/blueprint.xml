@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.3.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:ext="http://aries.apache.org/blueprint/xmlns/blueprint-ext/v1.6.0"
+           xsi:schemaLocation="
+           http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+    <ext:property-placeholder placeholder-prefix="$[" placeholder-suffix="]"/>
+    <cm:property-placeholder persistent-id="org.example.cxf.rest" update-strategy="reload">
+        <cm:default-properties>
+            <cm:property name="repository" value="example/repository"/>
+        </cm:default-properties>
+    </cm:property-placeholder>
+
+    <service ref="camelServlet">
+        <interfaces>
+            <value>javax.servlet.Servlet</value>
+            <value>org.apache.camel.http.common.CamelServlet</value>
+        </interfaces>
+        <service-properties>
+            <entry key="alias" value="/camel" />
+            <entry key="matchOnUriPrefix" value="true" />
+            <entry key="servlet-name" value="CamelServlet" />
+        </service-properties>
+    </service>
+
+    <bean id="camelServlet" class="org.apache.camel.component.servlet.CamelHttpTransportServlet"/>
+
+
+    <bean id="itemService" class="org.example.camel.rest.ItemService">
+        <property name="repository" ref="repository"/>
+    </bean>
+
+    <reference id="repository" interface="org.example.service.database.api.ItemRepository"
+               ext:filter="(osgi.jndi.service.name=${repository})"/>
+
+    <camelContext id="camelREST" xmlns="http://camel.apache.org/schema/blueprint">
+
+        <restConfiguration  bindingMode="json" component="servlet" contextPath="/camel">
+            <dataFormatProperty key="prettyPrint" value="true"/>
+        </restConfiguration>
+
+        <rest path="/items" produces="application/json">
+            <get id="getItemById" uri="/{id}" outType="org.example.service.database.dto.Item">
+                <route id="getItemById">
+                    <to uri="log:Camel-REST"/>
+                    <to uri="bean:itemService?method=getItem(${header.id})"/>
+                    <to uri="log:Camel-REST"/>
+                </route>
+            </get>
+
+            <put id="updateItem" type="org.example.service.database.dto.Item" consumes="application/json">
+                <to uri="bean:itemService?method=updateItem"/>
+            </put>
+
+            <get id="getListOfItems" uri="/all" outType="org.example.service.database.dto.Item">
+                <to uri="direct:getAll"/>
+            </get>
+
+            <post id="addItem" type="org.example.service.database.dto.Item" consumes="application/json">
+                <to uri="bean:itemService?method=addItem"/>
+            </post>
+
+            <delete id="removeItem" uri="/{id}">
+                <to uri="bean:itemService?method=removeItem(${header.id})"/>
+            </delete>
+
+        </rest>
+        <route id="beans">
+            <from uri="direct:getAll"/>
+            <to uri="log:Camel-REST"/>
+            <to uri="bean:itemService?method=getAllItems"/>
+            <to uri="log:Camel-REST"/>
+        </route>
+
+    </camelContext>
+
+</blueprint>
